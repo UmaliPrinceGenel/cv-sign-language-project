@@ -1,20 +1,32 @@
-# Computer Vision Project (cv-project)
+# Computer Vision Project: Sign Language Recognition
 
-A structured Computer Vision project setup for image processing, experiments, and proposal delivery.
+Milestone 2 (50% Progress Check) submission for CSST 106, featuring an end-to-end Support Vector Machine (SVM) baseline prototype for sign language recognition.
+
+> **Note:** Please see [`docs/progress_report.md`](docs/progress_report.md) for the completion status and milestone details.
+
+---
 
 ## 📁 Project Structure
 
 ```text
-cv-project/
-├── README.md                # Project documentation and setup instructions
-├── requirements.txt         # Python dependencies (OpenCV, Matplotlib, NumPy)
+cv-sign-language-project/
+├── README.md                      # Project documentation and setup instructions
+├── requirements.txt               # Python dependencies
 ├── data/
-│   └── samples/             # Place your 20 sample images here (.jpg, .png, etc.)
-├── src/
-│   └── spike.py             # Main Python processing script
-├── outputs/                 # Processed images and visualizations will be saved here
-└── docs/
-    └── proposal.pdf         # Project proposal document
+│   └── test/                      # Sample test images (e.g., peace_01.jpg)
+├── docs/
+│   ├── datacard.md                # Dataset documentation and summary
+│   └── progress_report.md         # Milestone 2 progress report and completion status
+├── models/                        # Pre-trained models (download .pkl weights from Drive)
+│   ├── scaler.pkl                 # Feature scaler
+│   └── svm_baseline_model.pkl     # Trained SVM baseline model
+├── notebooks/
+│   └── CV_project_sign.ipynb      # Exploration, feature extraction & training notebook
+├── outputs/
+│   └── predictions/               # Inference outputs with visual prediction banners
+└── src/
+    ├── baseline.py                # Feature extraction & pipeline utility functions
+    └── predict.py                 # Prototype inference script
 ```
 
 ---
@@ -27,7 +39,7 @@ It is recommended to use a virtual environment:
 
 ```bash
 # Navigate to the project folder
-cd cv-project
+cd cv-sign-language-project
 
 # Create a virtual environment
 python -m venv venv
@@ -43,21 +55,29 @@ source venv/bin/activate
 
 ### 2. Install Dependencies
 
+Install the required packages:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Add Sample Images
+> **Note:** This project requires `scikit-learn==1.6.1` and `opencv-python`.
 
-Place your 20 test/sample images inside the `data/samples/` directory:
-- Supported formats: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`, `.webp`
+### 3. Download Assets
 
-### 4. Run the Script
+Download the dataset and pre-trained model weights (`svm_baseline_model.pkl` and `scaler.pkl`) from Google Drive:
 
-Execute the spike pipeline:
+- **Dataset**: [https://drive.google.com/file/d/1ysFX8YRMNX6_WK4RgmRdRlYx4nTRBE5P/view?usp=sharing]
+  - Place your test images inside the `data/test/` directory.
+- **Model Weights**: [https://drive.google.com/drive/folders/1y-HSH_zvyWyW8_Z57QIqf8QoLx51tEPz?usp=sharing]
+  - Download `svm_baseline_model.pkl` and `scaler.pkl` and place both files into the `models/` directory.
+
+### 4. Run the Prototype
+
+Run the inference prototype using `src/predict.py`:
 
 ```bash
-python src/spike.py
+python src/predict.py -input data/test/peace_01.jpg -output outputs/predictions/
 ```
 
-Processed results and comparative plots will be saved automatically into the `outputs/` directory.
+This runs the end-to-end recognition pipeline on the specified test image and saves the predicted image with a high-contrast prediction banner to the `outputs/predictions/` folder.

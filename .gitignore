@@ -1,0 +1,22 @@
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Model Weights (downloaded externally via Drive)
+models/*.pkl
+!models/.gitkeep
+
+# Raw datasets
+*.zip
+data/train/
+data/val/
+
+# System and IDE
+.vscode/
+.DS_Store
+Thumbs.db
