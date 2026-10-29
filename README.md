@@ -1,83 +1,55 @@
-# Computer Vision Project: Sign Language Recognition
+# Real-Time Sign Language Recognition
 
-Milestone 2 (50% Progress Check) submission for CSST 106, featuring an end-to-end Support Vector Machine (SVM) baseline prototype for sign language recognition.
-
-> **Note:** Please see [`docs/progress_report.md`](docs/progress_report.md) for the completion status and milestone details.
+Milestone 3 (`cp3-core`) completion for CSST 106.
 
 ---
 
-## 📁 Project Structure
+## 1. Project Overview
 
-```text
-cv-sign-language-project/
-├── README.md                      # Project documentation and setup instructions
-├── requirements.txt               # Python dependencies
-├── data/
-│   └── test/                      # Sample test images (e.g., peace_01.jpg)
-├── docs/
-│   ├── datacard.md                # Dataset documentation and summary
-│   └── progress_report.md         # Milestone 2 progress report and completion status
-├── models/                        # Pre-trained models (download .pkl weights from Drive)
-│   ├── scaler.pkl                 # Feature scaler
-│   └── svm_baseline_model.pkl     # Trained SVM baseline model
-├── notebooks/
-│   └── CV_project_sign.ipynb      # Exploration, feature extraction & training notebook
-├── outputs/
-│   └── predictions/               # Inference outputs with visual prediction banners
-└── src/
-    ├── baseline.py                # Feature extraction & pipeline utility functions
-    └── predict.py                 # Prototype inference script
-```
+This project is a real-time sign language recognition system built using the **MediaPipe Tasks API** for hand landmark extraction and a **Multi-Layer Perceptron (MLP)** classifier for gesture prediction. The system is designed for high-throughput, low-latency live inference as well as automated batch evaluation.
 
 ---
 
-## 🚀 Getting Started
+## 2. Milestone 3 Performance
 
-### 1. Set Up Python Environment
+Our local benchmark results evaluated on the unseen test dataset:
 
-It is recommended to use a virtual environment:
+- **Accuracy:** 73.86% on the 241-image unseen test split
+- **Speed:** 21.18 ms per image (47.2 FPS)
 
-```bash
-# Navigate to the project folder
-cd cv-sign-language-project
+---
 
-# Create a virtual environment
-python -m venv venv
+## 3. Installation & Model Weights
 
-# Activate the virtual environment
-# On Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-# On Windows (cmd):
-.\venv\Scripts\activate.bat
-# On macOS/Linux:
-source venv/bin/activate
-```
+> **Note:** The model weights are too large for GitHub and must be downloaded manually.
 
-### 2. Install Dependencies
+1. Clone the repository and run pip install -r requirements.txt
+2. Download the trained model weights (mediapipe_mlp_model.pkl and scaler_mp.pkl) from this Google Drive link: [INSERT GOOGLE DRIVE LINK HERE]
+3. Place both .pkl files inside the models/ directory.
 
-Install the required packages:
+---
 
-```bash
-pip install -r requirements.txt
-```
+## 4. Usage
 
-> **Note:** This project requires `scikit-learn==1.6.1` and `opencv-python`.
+Run the Milestone 3 deliverables using the following terminal commands:
 
-### 3. Download Assets
+- **Live Inference:**
+  ```bash
+  python src/run.py -webcam 0
+  ```
 
-Download the dataset and pre-trained model weights (`svm_baseline_model.pkl` and `scaler.pkl`) from Google Drive:
+- **Test Set Evaluation:**
+  ```bash
+  python src/evaluate.py -d data/test
+  ```
 
-- **Dataset**: [https://drive.google.com/file/d/1ysFX8YRMNX6_WK4RgmRdRlYx4nTRBE5P/view?usp=sharing]
-  - Place your test images inside the `data/test/` directory.
-- **Model Weights**: [https://drive.google.com/drive/folders/1y-HSH_zvyWyW8_Z57QIqf8QoLx51tEPz?usp=sharing]
-  - Download `svm_baseline_model.pkl` and `scaler.pkl` and place both files into the `models/` directory.
+- **Failure Generator:**
+  ```bash
+  python src/generate_failures.py
+  ```
 
-### 4. Run the Prototype
+---
 
-Run the inference prototype using `src/predict.py`:
+## 5. Documentation
 
-```bash
-python src/predict.py -input data/test/peace_01.jpg -output outputs/predictions/
-```
-
-This runs the end-to-end recognition pipeline on the specified test image and saves the predicted image with a high-contrast prediction banner to the `outputs/predictions/` folder.
+For the full error analysis (including the 10-failure gallery, mechanical root causes, and evaluation breakdown) and the Phase 4 improvement plan, please see [`docs/ms3_report.md`](docs/ms3_report.md).
