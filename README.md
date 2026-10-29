@@ -1,6 +1,6 @@
 # Real-Time Sign Language Recognition
 
-Milestone 3 (`cp3-core`) completion for CSST 106.
+Milestone 3 completion for CSST 106.
 
 ---
 
@@ -24,7 +24,7 @@ Our local benchmark results evaluated on the unseen test dataset:
 > **Note:** The model weights are too large for GitHub and must be downloaded manually.
 
 1. Clone the repository and run pip install -r requirements.txt
-2. Download the trained model weights (mediapipe_mlp_model.pkl and scaler_mp.pkl) from this Google Drive link: [INSERT GOOGLE DRIVE LINK HERE]
+2. Download the trained model weights (mediapipe_mlp_model.pkl and scaler_mp.pkl) from this Google Drive link: [https://drive.google.com/drive/folders/1y-HSH_zvyWyW8_Z57QIqf8QoLx51tEPz?usp=sharing]
 3. Place both .pkl files inside the models/ directory.
 
 ---
