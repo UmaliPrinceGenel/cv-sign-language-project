@@ -201,7 +201,6 @@ signlang/
     ├── baseline.py                # Classical YCrCb, Hu Moments & HOG feature pipeline
     ├── evaluate.py                # Benchmark evaluation script (speed, F1, confusion matrix)
     ├── generate_failures.py       # Visual failure hunting and skeleton annotation tool
-    ├── generate_pdf_report.py     # Results PDF compiler (builds docs/ms3_report.pdf)
     ├── predict.py                 # Single-image classical SVM prototype inference
     ├── run.py                     # Real-time live webcam recognition application with HUD
     └── spike.py                   # Milestone 1 feasibility spike script
