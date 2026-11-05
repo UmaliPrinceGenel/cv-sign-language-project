@@ -290,15 +290,3 @@ python src/generate_pdf_report.py
 ```
 - Compiles [`docs/ms3_report.pdf`](docs/ms3_report.pdf).
 
----
-
-## 7. Team & Course Attribution
-
-- **Course:** CSST 106 - Computer Vision
-- **Institution:** Department of Computer Science & Information Technology
-- **Project Repository:** [`github.com/Prince-Genel/signlang`](https://github.com/Prince-Genel/signlang)
-
-### Team Members & Contributions
-- **Prince Genel Umali** — Feature extraction pipelines, SVM baseline training, quantitative evaluation framework (`src/evaluate.py`), confusion matrix diagnostics, results PDF compilation (`src/generate_pdf_report.py`).
-- **Kean Gabriel Salvahan** — HaGRID dataset curation, stratified splitting (70/15/15), data normalization, Gaussian denoising, and exploratory dataset contact sheets.
-- **Justin Angelo Luzande** — MediaPipe Tasks API integration, deep MLP classifier training, live webcam OpenCV HUD captioning application (`src/run.py`), temporal smoothing filter.
