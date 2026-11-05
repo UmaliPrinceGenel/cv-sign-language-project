@@ -281,11 +281,4 @@ python src/generate_failures.py
 ```
 - Saves annotated images (`fail_1_...jpg` through `fail_10_...jpg`) into `outputs/failures/`.
 
-### D. Compile Results PDF Report
-Rebuild the 3-page results report PDF:
-
-```bash
-python src/generate_pdf_report.py
-```
-- Compiles [`docs/ms3_report.pdf`](docs/ms3_report.pdf).
 
