@@ -1,0 +1,63 @@
+{
+  "milestone": "Milestone 4 (cp4-80)",
+  "weights_file": "best.pt",
+  "weights_size_bytes": 613808,
+  "weights_size_kb": 599.42,
+  "geometric_refinement": true,
+  "total_test_samples": 240,
+  "overall_accuracy": 0.8625,
+  "overall_accuracy_pct": 86.25,
+  "macro_f1": 0.8966,
+  "average_latency_ms": 18.12,
+  "throughput_fps": 55.2,
+  "per_class": {
+    "call": {
+      "precision": 0.958,
+      "recall": 0.767,
+      "f1_score": 0.852,
+      "support": 30
+    },
+    "dislike": {
+      "precision": 0.931,
+      "recall": 0.9,
+      "f1_score": 0.915,
+      "support": 30
+    },
+    "like": {
+      "precision": 0.862,
+      "recall": 0.833,
+      "f1_score": 0.847,
+      "support": 30
+    },
+    "mute": {
+      "precision": 0.917,
+      "recall": 0.733,
+      "f1_score": 0.815,
+      "support": 30
+    },
+    "ok": {
+      "precision": 0.966,
+      "recall": 0.933,
+      "f1_score": 0.949,
+      "support": 30
+    },
+    "palm": {
+      "precision": 0.964,
+      "recall": 0.9,
+      "f1_score": 0.931,
+      "support": 30
+    },
+    "peace": {
+      "precision": 0.967,
+      "recall": 0.967,
+      "f1_score": 0.967,
+      "support": 30
+    },
+    "stop": {
+      "precision": 0.929,
+      "recall": 0.867,
+      "f1_score": 0.897,
+      "support": 30
+    }
+  }
+}
