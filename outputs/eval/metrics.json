@@ -8,8 +8,8 @@
   "overall_accuracy": 0.8625,
   "overall_accuracy_pct": 86.25,
   "macro_f1": 0.8966,
-  "average_latency_ms": 18.12,
-  "throughput_fps": 55.2,
+  "average_latency_ms": 18.98,
+  "throughput_fps": 52.7,
   "per_class": {
     "call": {
       "precision": 0.958,

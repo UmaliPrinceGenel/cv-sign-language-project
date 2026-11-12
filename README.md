@@ -4,7 +4,7 @@
 [![OpenCV](https://img.shields.io/badge/OpenCV-5.0-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
 [![MediaPipe Tasks API](https://img.shields.io/badge/MediaPipe-Tasks%20API-007FFF?logo=google&logoColor=white)](https://developers.google.com/mediapipe)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![Milestone](https://img.shields.io/badge/Milestone-3%20(cp3--core)-success)](#3-current-state-milestone-3-main-method-cp3-core)
+[![Milestone](https://img.shields.io/badge/Milestone-4%20(cp4--80)-success)](#3-current-state-milestone-4-refined-pipeline-cp4-80)
 [![Course](https://img.shields.io/badge/Course-CSST%20106-blue)](#7-team--course-attribution)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -252,33 +252,43 @@ pip install -r requirements.txt
 
 ---
 
-## 6. Usage & Deliverables
+## 6. Usage & Milestone 4 Deliverables
 
-### A. Run Live Webcam Inference (Main Application)
-Launch the real-time sign language recognition application with live OpenCV HUD caption overlay:
-
-```bash
-python src/run.py -webcam 0
-```
-- **Controls:** Press `q` to safely exit the webcam stream.
-- **Features:** Real-time skeletal landmark rendering, classification confidence score, and on-screen caption subtitle bar.
-
-### B. Evaluate Test Split & Generate Confusion Matrix
-Run the comprehensive benchmark evaluation across the 241-image unseen test set:
+### A. Run Interactive Web Application (Milestone 4 GUI)
+Launch the unified Gradio web application with image upload, live webcam streaming, confidence slider, skeleton toggle, and cumulative detection tally:
 
 ```bash
-python src/evaluate.py -d data/test
+python src/app.py
 ```
-- Measures individual and average inference latency (ms per frame and FPS throughput).
+- Open **`http://127.0.0.1:7860`** in your browser.
+- **Image Upload Tab:** Test single images or click sample images in the quick gallery.
+- **Live Webcam Tab:** Stream live video directly in the browser at 30 FPS.
+- **Controls:** Dynamic confidence threshold slider and keypoints toggle.
+
+### B. Reproduce Official Benchmark Results (Teacher Verification Command)
+Execute the exact command required by the Milestone 4 Checkpoint Guide:
+
+```bash
+python src/evaluate.py --split test --weights models/best.pt
+```
+- Evaluates the frozen 240-image unseen test set.
 - Prints the scikit-learn `classification_report` formatted with `digits=3`.
-- Generates and saves the high-resolution confusion matrix to `outputs/ms3_confusion_matrix.png`.
+- Reproduces **86.25% Accuracy** and **0.897 Macro-F1** at **~18.9 ms (52.7 FPS)**.
+- Outputs saved automatically to `outputs/eval/metrics.json` and `outputs/eval/confusion_matrix.png`.
 
-### C. Generate the 10-Image Failure Gallery
-Extract and annotate 10 misclassified frames with skeletal overlays and prediction error tags:
+### C. Run Native Desktop Webcam Application (OpenCV HUD)
+Launch the direct Windows Media Foundation 30 FPS desktop window:
 
 ```bash
-python src/generate_failures.py
+python src/run.py --webcam 0
 ```
-- Saves annotated images (`fail_1_...jpg` through `fail_10_...jpg`) into `outputs/failures/`.
+- **Controls:** Press `q` or `ESC` to quit.
+- Displays real-time prediction, confidence score, FPS counter, and bottom cumulative counts bar.
+
+### D. Milestone 4 Documentation & Artifacts
+- **Test Cases (10 Matrix):** [`docs/test_cases.md`](docs/test_cases.md) (covers `TC01`–`TC10` including 3 hard edge cases).
+- **Technical Report:** [`docs/ms4_report.md`](docs/ms4_report.md) (methodology, experiments, failure analysis, operating conditions).
+- **Presentation Slides:** [`docs/slides.md`](docs/slides.md) (9 structured slides for defense).
+- **Path to 100% Roadmap:** [`docs/remaining.md`](docs/remaining.md) (Milestone 5 tasks, owners, and dates).
 
 
