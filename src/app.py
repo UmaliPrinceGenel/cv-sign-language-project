@@ -574,14 +574,32 @@ def get_telemetry():
 app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 
+def find_available_port(start_port: int = 7860, max_attempts: int = 20) -> int:
+    import socket
+    for p in range(start_port, start_port + max_attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(('127.0.0.1', p))
+                return p
+            except OSError:
+                continue
+    return start_port
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Sign Language Recognition Interactive App")
     parser.add_argument("--port", type=int, default=7860, help="Web server port (default: 7860)")
     args = parser.parse_args()
 
-    print(f"\n[+] Launching Zero-Lag Sign Language Web App on http://127.0.0.1:{args.port} ...")
-    uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
+    chosen_port = find_available_port(start_port=args.port)
+    if chosen_port != args.port:
+        print(f"[!] Notice: Port {args.port} is already in use by another process.")
+        print(f"[+] Automatically assigned available port {chosen_port}.")
+
+    print(f"\n[+] Launching Zero-Lag Sign Language Web App on http://127.0.0.1:{chosen_port} ...")
+    uvicorn.run(app, host="127.0.0.1", port=chosen_port, log_level="warning")
 
 
 if __name__ == "__main__":
