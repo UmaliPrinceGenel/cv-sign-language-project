@@ -283,7 +283,7 @@ def resume_web_stream():
     """Resumes the browser MJPEG camera stream."""
     global camera_active
     camera_active = True
-    return "✅ Browser live stream active."
+    return None
 
 
 # -------------------------------------------------------------------------
