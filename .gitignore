@@ -7,9 +7,13 @@ venv/
 .venv/
 env/
 
-# Model Weights (downloaded externally via Drive)
-models/*.pkl
+# Model Weights (large baseline SVM downloaded externally; core 600KB MLP & scalers tracked for fresh-clone v1.0)
+models/svm_baseline_model.pkl
 !models/.gitkeep
+!models/best.pt
+!models/mediapipe_mlp_model.pkl
+!models/scaler_mp.pkl
+!models/scaler.pkl
 
 # Raw datasets
 *.zip

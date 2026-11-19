@@ -1,175 +1,165 @@
-# Real-Time Sign Language Recognition & Captioning
+# Real-Time Sign Language Word Gesture Recognition and On-Screen Captioning
 
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-5.0-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
 [![MediaPipe Tasks API](https://img.shields.io/badge/MediaPipe-Tasks%20API-007FFF?logo=google&logoColor=white)](https://developers.google.com/mediapipe)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![Milestone](https://img.shields.io/badge/Milestone-4%20(cp4--80)-success)](#3-current-state-milestone-4-refined-pipeline-cp4-80)
-[![Course](https://img.shields.io/badge/Course-CSST%20106-blue)](#7-team--course-attribution)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6%2B-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Release](https://img.shields.io/badge/Release-v1.0-success)](#5-how-to-reproduce-the-results-table)
+[![Course](https://img.shields.io/badge/Course-CSST%20106-blue)](#8-team-and-contributions)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-> **CSST 106 - Computer Vision Project**  
-> An edge-capable, low-latency computer vision system that detects static hand gestures from live webcam video in real time and automatically renders on-screen word captions to bridge communication gaps for the deaf and hard-of-hearing.
+---
+
+## 1. What It Does
+
+This project provides a real-time, CPU-executed computer vision system that translates 8 static whole-word sign language gestures (`CALL`, `DISLIKE`, `LIKE`, `MUTE`, `OK`, `PALM`, `PEACE`, `STOP`) from live webcam streams, uploaded images, or video files into on-screen text captions to assist face-to-face communication between deaf or hard-of-hearing signers and non-signers. The pipeline extracts 21 3D hand skeletal landmarks via the MediaPipe Tasks API (`HandLandmarker`), isolates the active signing hand using highest-elevation selection (`num_hands=2`), classifies standardized 63-dimensional feature vectors with a 2-layer Multi-Layer Perceptron ($128 \times 64$ ReLU), applies scale-invariant geometric landmark refinement (thumb-index pinch ratio, inter-finger angular spread, and pinky separation), and stabilizes live output through a 5-frame temporal majority-vote queue. On the frozen 240-image unseen test set, the `v1.0` build achieves **86.25% end-to-end overall accuracy** (penalizing all detector dropouts), **93.67% accuracy on localized hands**, a **0.897 Macro-F1 score**, and an average inference latency of **18.98 ms per frame (52.7 FPS)** on a commodity laptop CPU without GPU acceleration.
+
+![Interactive Web Application Screenshot](outputs/final/ui_gradio_screenshot.jpg)
+
+![Sample 8-Class Annotated Outputs](outputs/final/final_8class_grid.png)
 
 ---
 
-## 📑 Table of Contents
-- [1. Project Overview](#1-project-overview)
-- [2. Project History & Evolution (Milestones 1 & 2)](#2-project-history--evolution-milestones-1--2)
-  - [Milestone 1: Inception, Scoping & Dataset Curation](#milestone-1-inception-scoping--dataset-curation-cp1-proposal)
-  - [Milestone 2: Classical Computer Vision Baseline (HOG + SVM)](#milestone-2-classical-computer-vision-baseline-hog--svm-cp2-50)
-  - [The Classical Failure Mode: Why Hand ROIs Failed in the Wild](#the-classical-failure-mode-why-hand-rois-failed-in-the-wild)
-- [3. Current State: Milestone 3 Main Method (`cp3-core`)](#3-current-state-milestone-3-main-method-cp3-core)
-  - [Deep Learning Architecture: MediaPipe Tasks + MLP](#deep-learning-architecture-mediapipe-tasks--mlp)
-  - [Milestone 3 Benchmark Performance](#milestone-3-benchmark-performance)
-  - [Baseline vs. Main Method Comparative Evaluation](#baseline-vs-main-method-comparative-evaluation)
-  - [Error Analysis & Results Report](#error-analysis--results-report)
-- [4. Repository Structure](#4-repository-structure)
-- [5. Installation & Setup](#5-installation--setup)
-- [6. Usage & Deliverables](#6-usage--deliverables)
-- [7. Team & Course Attribution](#7-team--course-attribution)
+## 2. Requirements
+
+- **Operating System:** Windows 10/11 (64-bit), macOS, or Linux
+- **Python Version:** Python 3.10 to 3.13
+- **Hardware:** Standard laptop or desktop CPU (no discrete GPU required); standard USB or integrated RGB webcam for live streaming
+- **Python Packages (`requirements.txt`):**
+  - `opencv-python>=4.8.0`
+  - `numpy>=1.24.0`
+  - `matplotlib>=3.7.0`
+  - `scikit-learn>=1.6.0`
+  - `mediapipe>=0.10.0`
+  - `gradio>=4.0.0`
+  - `fastapi>=0.100.0`
+  - `uvicorn>=0.23.0`
+  - `pandas>=1.5.0`
+  - `joblib>=1.2.0`
 
 ---
 
-## 1. Project Overview
+## 3. Installation
 
-Deaf and hard-of-hearing individuals frequently encounter communication barriers during everyday face-to-face interactions (e.g., at service counters, classrooms, clinics, and customer support desks) when speaking with non-signers. Relying on smartphone typing or slow finger-spelling charts interrupts natural engagement.
+The `v1.0` repository includes the core trained weights (`models/best.pt`, `models/mediapipe_mlp_model.pkl`, `models/scaler_mp.pkl`, `models/hand_landmarker.task`) and the 240-image unseen test set (`data/test/`) directly in the repository so it runs immediately from a fresh clone:
 
-This project delivers a **real-time sign language recognition and captioning system** running entirely on a standard laptop CPU using an off-the-shelf webcam. The system detects, classifies, and overlays instant subtitle banners for **8 static whole-word sign gestures**:
+```bash
+# 1. Clone the repository and checkout the v1.0 release tag
+git clone https://github.com/UmaliPrinceGenel/cv-sign-language-project.git
+cd cv-sign-language-project
+git checkout v1.0
 
-| Gesture | Sign Language Word / Intent | Visual Pose Description |
-| :---: | :---: | :--- |
-| **`CALL`** | *"Call Me"* / *"Phone"* | Thumb and pinky extended outward; index, middle, and ring fingers folded into palm. |
-| **`DISLIKE`** | *"No"* / *"Dislike"* | Closed fist with thumb pointed vertically downward. |
-| **`LIKE`** | *"Yes"* / *"Like"* / *"Good"* | Closed fist with thumb pointed vertically upward. |
-| **`MUTE`** | *"Quiet"* / *"Mute"* | Closed fist held centrally (or index finger held vertically over lips). |
-| **`OK`** | *"OK"* / *"Understood"* | Thumb and index fingertips touching in a ring; middle, ring, and pinky extended upward. |
-| **`PALM`** | *"Hello"* / *"Open Hand"* | Open palm facing the camera with all five fingers extended upright. |
-| **`PEACE`** | *"Peace"* / *"Two"* | Index and middle fingers extended upward in a 'V' shape; ring, pinky, and thumb folded. |
-| **`STOP`** | *"Stop"* / *"Halt"* | Flat, upright open hand held forward at shoulder level with fingers together. |
+# 2. (Optional) Create and activate a virtual environment
+python -m venv venv
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# Windows CMD:
+.\venv\Scripts\activate.bat
+# macOS / Linux:
+source venv/bin/activate
 
----
-
-## 2. Project History & Evolution (Milestones 1 & 2)
-
-```
-┌───────────────────────────┐      ┌───────────────────────────┐      ┌───────────────────────────┐
-│        Milestone 1        │      │        Milestone 2        │      │        Milestone 3        │
-│      (cp1-proposal)       │ ───► │         (cp2-50)          │ ───► │        (cp3-core)         │
-│  Dataset Curation & Spike │      │    HOG + SVM Baseline     │      │   MediaPipe Tasks + MLP   │
-└───────────────────────────┘      └───────────────────────────┘      └───────────────────────────┘
-```
-
-### Milestone 1: Inception, Scoping & Dataset Curation (`cp1-proposal`)
-- **Dataset Assembly:** Curated an 8-class subset sampled from the **HaGRID (HAnd Gesture Recognition Image Dataset)** distribution, combined with locally captured webcam validation samples (see [`docs/datacard.md`](docs/datacard.md)).
-- **Stratified Partitioning:** Structured a strict 70% / 15% / 15% stratified split across all 8 classes ensuring zero subject or room overlap between splits:
-  - **Training Split:** 1,120 images (140 per class) + horizontal flip augmentation.
-  - **Validation Split:** 240 images (30 per class).
-  - **Unseen Test Split:** 241 images (~30 per class).
-- **Feasibility Spike:** Implemented early 20-sample contact sheet generation and fundamental image operations (grayscale, 5×5 Gaussian blur denoising, Otsu thresholding, Sobel edge detection) in `src/spike.py`.
-
-### Milestone 2: Classical Computer Vision Baseline (HOG + SVM) (`cp2-50`)
-In Milestone 2, we developed a classical, hand-crafted feature engineering pipeline (`src/baseline.py`):
-1. **Color Segmentation:** Converted BGR frames to **YCrCb color space** and thresholded skin pixels using calibrated chrominance ranges ($Cr \in [133, 173]$, $Cb \in [77, 127]$).
-2. **Morphological Filtering:** Applied elliptical $5 \times 5$ morphological closing to fill interior hand voids.
-3. **Contour Geometry:** Extracted the largest skin contour to compute **7 Scale- and Rotation-Invariant Hu Moments**, convexity defects, contour aspect ratio, and solidity.
-4. **Texture & Orientation:** Applied CLAHE contrast enhancement followed by **Histogram of Oriented Gradients (HOG)** with $16 \times 16$ stride and 9 angular bins, concatenating into a 3,790-dimensional feature vector.
-5. **Classification:** Trained an RBF-kernel Support Vector Machine (SVM, $C=10.0$, $\gamma=\text{scale}$).
-
-### The Classical Failure Mode: Why Hand ROIs Failed in the Wild
-- **Validation Metric:** On pre-cropped hand Regions-of-Interest (ROIs) utilizing HaGRID's ground-truth JSON bounding boxes, the SVM achieved **96.25% validation accuracy** and a **Macro-F1 of 0.9627**.
-- **Real-World Breakdown:** When tested live on raw, uncropped webcam frames without artificial bounding boxes (`src/predict.py`), performance collapsed (<30% accuracy). The classical skin mask repeatedly latched onto faces, bare arms, and warm wooden desks as the "largest contour," blinding the classifier to the actual hand shape.
-- **Strategic Decision:** This validated our planned architectural pivot away from color thresholding to deep skeletal landmark tracking in Milestone 3.
-
----
-
-## 3. Current State: Milestone 3 Main Method (`cp3-core`)
-
-### Deep Learning Architecture: MediaPipe Tasks + MLP
-
-```
-Raw Webcam Frame (640x480 RGB)
-              │
-              ▼
-┌───────────────────────────────────────────────┐
-│  MediaPipe Tasks API (HandLandmarker)         │
-│  - Deep ML Palm Detector & Knuckle Regressor  │
-│  - 21 3D Landmarks (x, y, z) = 63 Features    │
-│  - Invariant to skin tone, lighting & clutter │
-└───────────────────────────────────────────────┘
-              │
-              ▼
-┌───────────────────────────────────────────────┐
-│  StandardScaler Normalization (scaler_mp.pkl) │
-└───────────────────────────────────────────────┘
-              │
-              ▼
-┌───────────────────────────────────────────────┐
-│  Multi-Layer Perceptron (MLP) Classifier      │
-│  - Softmax Probability Distribution (8 Class) │
-└───────────────────────────────────────────────┘
-              │
-              ▼
-┌───────────────────────────────────────────────┐
-│  Post-Processing & HUD Rendering              │
-│  - Threshold Gating (τ = 0.75)                │
-│  - 5-Frame Rolling Majority Smoothing Buffer  │
-│  - High-Contrast Live OpenCV Caption Banner   │
-└───────────────────────────────────────────────┘
+# 3. Install dependencies
+pip install -r requirements.txt
 ```
 
-Rather than segmenting fragile skin pixels, our Milestone 3 system tracks the structural geometry of the human hand:
-1. **Knuckle Localization:** The MediaPipe Tasks `HandLandmarker` model regresses **21 3D hand-knuckle landmarks** ($x, y, z$ in normalized space) directly from full-resolution RGB video.
-2. **Feature Vector:** The 63 coordinates capture finger joint angles, inter-digit spreads, and thumb opposition independently of skin pigmentation, illumination shifts, or background clutter.
-3. **MLP Classifier:** A Multi-Layer Perceptron trained on normalized landmark coordinates outputs class probabilities with ultra-low computational overhead.
+---
 
-### Milestone 3 Benchmark Performance
+## 4. How to Run the Application
 
-Evaluated strictly on our **241-image unseen test split** using `src/evaluate.py`:
+### Option A: Interactive Web Application (Gradio + FastAPI MJPEG Stream)
+Launch the full web interface supporting single-image uploads, built-in quick-test sample gallery, zero-lag 30 FPS HTTP MJPEG live webcam streaming, batch `.mp4` video processing, confidence threshold slider, skeleton overlay toggle, and cumulative gesture detection tally:
 
-| Performance Metric | Local Benchmark Result | Practical Implication |
-| :--- | :---: | :--- |
-| **Overall Accuracy** | **`73.86%`** | **Honest system metric** (178 / 241 test images), strictly penalizing all 27 detector dropouts. *(82.71% on detected hands)* |
-| **Macro-F1 Score** | **`0.778`** | High balanced performance across all 8 classes (Weighted-F1: **0.781**). |
-| **Inference Latency** | **`21.18 ms`** | Pure CPU inference per frame (preprocessing + landmarking + MLP classification). |
-| **System Throughput** | **`47.2 FPS`** | **3.1× faster** than the project's real-time threshold of 15 FPS. |
+```bash
+python src/app.py
+```
 
-### Baseline vs. Main Method Comparative Evaluation
+- Open **`http://127.0.0.1:7860`** in your browser.
+- If port `7860` is already in use, `src/app.py` automatically selects the next available port (e.g., `7861`) and prints the active URL in the terminal.
+- You may also specify a custom port: `python src/app.py --port 7865`.
 
-| Evaluation Dimension | Milestone 2 Baseline (HOG + SVM) | Milestone 3 Main Method (MediaPipe + MLP) | Advantage / Trade-off |
-| :--- | :--- | :--- | :--- |
-| **Underlying Technique** | YCrCb Skin Mask + Contours + HOG + SVM | MediaPipe Tasks HandLandmarker + 63-D MLP | Landmark model is invariant to background noise |
-| **Feature Dimensionality** | 3,790 features (Hu moments, ratios, HOG) | **63 features** (21 landmarks $\times [x,y,z]$) | **60× smaller** feature space; faster training |
-| **Input Framing** | Requires pre-cropped hand bounding boxes | **Full uncropped frames** ($640 \times 480$ RGB) | Ready for unconstrained webcam use |
-| **Inference Latency** | **6.09 ms per image** | **21.18 ms per image** | Baseline is faster, but functionally unusable live |
-| **Throughput (Speed)** | 164.3 FPS | **47.2 FPS** | Main method easily clears the 15 FPS threshold |
-| **Controlled Val Accuracy** | **96.25%** (on cropped ROI validation) | 83.2% (on detected hand landmarks) | Baseline excelled only under artificial cropping |
-| **Unseen Full-Scene Accuracy** | **< 30.0%** (fails on real-world backgrounds) | **73.86%** (Honest metric on 241 test frames) | **+43.8% practical accuracy gain** in realistic scenes |
-| **Macro-F1 Score** | 0.9627 (cropped ROI only) | **0.778** (unseen full-scene split) | Reliable multiclass discrimination |
-| **Clutter / Skin Invariance** | **Very Fragile** (faces, wood, arms corrupt mask) | **High** (deep skeletal features ignore clutter) | Immune to room furniture and lighting changes |
+### Option B: Standalone Desktop OpenCV HUD Window
+Launch the native OpenCV desktop application using asynchronous Windows Media Foundation (`cv2.CAP_MSMF`) camera capture with top prediction HUD and bottom cumulative tally bar:
 
-### Error Analysis & Results Report
+```bash
+# Live webcam stream (camera index 0)
+python src/run.py --webcam 0
 
-For the complete technical evaluation, refer to our official results documentation:
-- **Publication Results PDF (3 Pages):** [`docs/ms3_report.pdf`](docs/ms3_report.pdf)
-- **Markdown Error Analysis Report:** [`docs/ms3_report.md`](docs/ms3_report.md)
-- **Key Findings:**
-  1. **Confusion Matrix Analysis:** [`outputs/ms3_confusion_matrix.png`](outputs/ms3_confusion_matrix.png) demonstrates near-perfect recall on `PEACE` (1.000) and `STOP` (0.929), while identifying `PALM` vs. `STOP` and `CALL` vs. `LIKE` as primary confusions.
-  2. **10-Image Failure Gallery:** Generated in [`outputs/failures/`](outputs/failures/) showing the primary mechanical root causes (e.g., wrist tilt hiding the pinky finger in `CALL`, and two-hand interference where `num_hands=1` locks onto a resting lap hand).
-  3. **Phase 4 Improvement Plan:** Concrete engineering roadmap addressing each mechanical cause via 3D rotation augmentation, `num_hands=2` active hand elevation heuristics, and 5-frame rolling majority voting.
+# Single image or directory batch inference
+python src/run.py --input data/peace_01.jpg --save
+```
+- Press `q` or `ESC` inside the OpenCV window to exit cleanly.
 
 ---
 
-## 4. Repository Structure
+## 5. How to Reproduce the Results Table
+
+Run the single evaluation command from the project root directory to evaluate the frozen 240-image unseen test split (`data/test/`):
+
+```bash
+python src/evaluate.py --split test --weights models/best.pt
+```
+
+This command:
+1. Evaluates all 240 unseen test images end-to-end (30 images per class across `call`, `dislike`, `like`, `mute`, `ok`, `palm`, `peace`, `stop`), strictly penalizing any `no_hand` detector dropouts as misclassifications.
+2. Prints the per-frame latency, throughput (FPS), overall accuracy, Macro-F1 score, and `scikit-learn` classification report (`digits=3`).
+3. Saves machine-readable metrics to [`outputs/eval/metrics.json`](outputs/eval/metrics.json) and the confusion matrix to [`outputs/eval/confusion_matrix.png`](outputs/eval/confusion_matrix.png) (mirrored in [`outputs/final/`](outputs/final/)).
+
+### Reproduced Results Table (Baseline vs. Milestone 3 vs. Final `v1.0`)
+
+| Evaluation Dimension | MS2 Baseline (`cp2-50`) | MS3 Core (`cp3-core`) | Final Build (`v1.0`) | Net Change (MS3 to `v1.0`) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Pipeline Architecture** | YCrCb + Hu + HOG + SVM | MediaPipe (`num_hands=1`) + MLP | **MediaPipe (`num_hands=2`) + MLP + Geometry** | Active Hand + Geometry |
+| **Unseen Full-Scene Test Accuracy** | < 30.0% (clutter failure) | 73.86% (178 / 241) | **86.25% (207 / 240)** | **+12.39% Accuracy** |
+| **Unseen Test Macro-F1 Score** | 0.284 (full scene) | 0.778 | **0.897** | **+0.119 Macro-F1** |
+| **Accuracy on Localized Hands** | 96.25% (cropped ROI only) | 82.71% (177 / 214) | **93.67% (207 / 221)** | **+10.96% Visible Acc** |
+| **Detector Dropouts (`no_hand`)** | N/A (segments largest blob) | 27 / 241 (11.2%) | **19 / 240 (7.9%)** | **-30% Dropouts** |
+| **CPU Inference Latency / Speed** | 6.09 ms (164.3 FPS ROI) | 21.18 ms (47.2 FPS) | **18.98 ms (52.7 FPS)** | **-2.20 ms (+5.5 FPS)** |
+
+### Reproduced Per-Class Test Metrics (`v1.0`, 240 Unseen Test Images)
+
+| Class | Precision | Recall | F1-Score | Support |
+| :--- | :---: | :---: | :---: | :---: |
+| **`call`** | 0.958 | 0.767 | **0.852** | 30 |
+| **`dislike`** | 0.931 | 0.900 | **0.915** | 30 |
+| **`like`** | 0.862 | 0.833 | **0.847** | 30 |
+| **`mute`** | 0.917 | 0.733 | **0.815** | 30 |
+| **`ok`** | 0.966 | 0.933 | **0.949** | 30 |
+| **`palm`** | 0.964 | 0.900 | **0.931** | 30 |
+| **`peace`** | 0.967 | 0.967 | **0.967** | 30 |
+| **`stop`** | 0.929 | 0.867 | **0.897** | 30 |
+| **Macro Avg / Total** | **0.937** | **0.863** | **0.897** | **240 (86.25% Acc)** |
+
+---
+
+## 6. Where the Dataset and Weights Are Located
+
+### Model Weights (`models/`)
+- **Included in Repository & GitHub Release (`v1.0`):**
+  - `models/best.pt` (599.4 KB) and `models/mediapipe_mlp_model.pkl` (599.4 KB): Trained 2-layer MLP classifier weights ($63 \rightarrow 128 \rightarrow 64 \rightarrow 8$).
+  - `models/scaler_mp.pkl` (2.1 KB): Fitted `StandardScaler` for 63-D MediaPipe landmarks.
+  - `models/hand_landmarker.task` (7.45 MB): MediaPipe Tasks API HandLandmarker TFLite model asset (also auto-downloads from Google Cloud Storage if absent).
+  - `models/scaler.pkl` (42.2 KB): Fitted `StandardScaler` for the Milestone 2 HOG + SVM baseline.
+- **External Archive (Full Weights Bundle including 23.3 MB `svm_baseline_model.pkl`):**
+  - [Google Drive Model Weights Folder](https://drive.google.com/drive/folders/1y-HSH_zvyWyW8_Z57QIqf8QoLx51tEPz?usp=sharing) and attached to the GitHub `v1.0` Release.
+
+### Dataset (`data/`)
+- **Included in Repository:**
+  - `data/test/`: All **240 unseen test images** (30 per class across all 8 classes) used by `src/evaluate.py`.
+  - `data/*.jpg`: 20 quick-test sample images (`call_01.jpg` to `stop_02.jpg`, plus out-of-vocabulary `fist_01.jpg` and `rock_01.jpg`).
+- **Full 1,600-Image Dataset Source & Documentation:**
+  - Sourced from the [HaGRID Sample 30k 384p Dataset on Kaggle](https://www.kaggle.com/datasets/innominate817/hagrid-sample-30k-384p) under the **CC BY 4.0** license (1,120 train / 240 val / 240 test). Full provenance and preprocessing details are documented in [`docs/datacard.md`](docs/datacard.md).
+
+---
+
+## 7. Project Structure
 
 ```text
-signlang/
-├── README.md                      # Project overview, evolution, benchmarks & setup guide
-├── requirements.txt               # Pinned Python package dependencies
-├── .gitignore                     # Git ignore rules (weights, cache, venv)
+cv-sign-language-project/
+├── README.md                          # Project overview, installation, usage & reproduction guide
+├── requirements.txt                   # Python package dependencies
 ├── data/
-│   ├── samples/                   # Representative sample images per class
-│   └── test/                      # 241-image unseen test split partitioned by class
+│   ├── *.jpg                          # 20 quick-test & out-of-vocabulary sample images
+│   └── test/                          # Frozen 240-image unseen test set (30 images x 8 classes)
 │       ├── call/
 │       ├── dislike/
 │       ├── like/
@@ -179,116 +169,53 @@ signlang/
 │       ├── peace/
 │       └── stop/
 ├── docs/
-│   ├── datacard.md                # HaGRID subset provenance, licensing & stratified splits
-│   ├── progress_report.md         # Milestone 2 (cp2-50) progress check documentation
-│   ├── ms3_report.md              # Milestone 3 error analysis, metrics & improvement plan
-│   ├── ms3_report.pdf             # Formatted 3-page submission PDF report
-│   └── Project_Outline_CV.pdf     # Official CSST 106 project proposal and timeline
-├── models/                        # Serialized models and feature scalers
-│   ├── hand_landmarker.task       # MediaPipe HandLandmarker TFLite model asset
-│   ├── mediapipe_mlp_model.pkl    # Trained MLP Classifier for 8-class gestures
-│   ├── scaler_mp.pkl              # StandardScaler for 63-D MediaPipe landmark coordinates
-│   ├── svm_baseline_model.pkl     # Classical Milestone 2 SVM baseline model
-│   └── scaler.pkl                 # StandardScaler for classical HOG baseline
+│   ├── Final_report.pdf               # Milestone 5 Final Project Report PDF (10 sections + appendices)
+│   ├── test_cases.md                  # Formal 10-case test matrix (TC01-TC10, including 3 hard cases)
+│   ├── datacard.md                    # Dataset provenance, CC BY 4.0 license & 70/15/15 split details
+│   ├── ms4_report.md                  # Milestone 4 (cp4-80) technical report
+│   ├── ms3_report.pdf                 # Milestone 3 (cp3-core) results & error analysis PDF
+│   ├── progress_report.md             # Milestone 2 (cp2-50) baseline progress report
+│   └── Project_Outline_CV.pdf         # Milestone 1 (cp1-proposal) project outline
+├── models/
+│   ├── best.pt                        # Final production MLP classifier weights (599.4 KB)
+│   ├── mediapipe_mlp_model.pkl        # Serialized MLP classifier artifact
+│   ├── scaler_mp.pkl                  # StandardScaler fitted on 63-D training landmarks
+│   ├── hand_landmarker.task           # MediaPipe Tasks API HandLandmarker model
+│   └── scaler.pkl                     # StandardScaler for Milestone 2 classical baseline
 ├── notebooks/
-│   └── CV_project_sign.ipynb      # Exploration, feature extraction & training notebook
+│   └── CV_project_sign.ipynb          # Dataset exploration, feature extraction & model training notebook
 ├── outputs/
-│   ├── ms3_confusion_matrix.png   # 300 DPI Confusion Matrix display
-│   ├── contact_sheet.png          # 20-sample labeled dataset contact sheet
-│   ├── failures/                  # 10 annotated failure gallery images from evaluate.py
-│   └── predictions/               # Visual inference outputs with HUD banners
+│   ├── contact_sheet.png              # Milestone 1 20-sample labeled dataset contact sheet
+│   ├── ms3_confusion_matrix.png       # Milestone 3 confusion matrix archive
+│   ├── eval/                          # Live output directory for src/evaluate.py
+│   │   ├── confusion_matrix.png
+│   │   └── metrics.json
+│   ├── failures/                      # Milestone 3 10-image annotated failure gallery
+│   └── final/                         # Milestone 5 final screenshots, 8-class grid & failure outputs
+│       ├── confusion_matrix.png
+│       ├── final_8class_grid.png
+│       ├── final_failures_grid.png
+│       ├── ui_gradio_screenshot.jpg
+│       ├── sample_01_call.jpg ... sample_08_stop.jpg
+│       └── failure_TC07_...jpg ... failure_TC09_...jpg
 └── src/
-    ├── baseline.py                # Classical YCrCb, Hu Moments & HOG feature pipeline
-    ├── evaluate.py                # Benchmark evaluation script (speed, F1, confusion matrix)
-    ├── generate_failures.py       # Visual failure hunting and skeleton annotation tool
-    ├── predict.py                 # Single-image classical SVM prototype inference
-    ├── run.py                     # Real-time live webcam recognition application with HUD
-    └── spike.py                   # Milestone 1 feasibility spike script
+    ├── app.py                         # FastAPI + Gradio interactive web app with MJPEG webcam stream
+    ├── run.py                         # Core 4-stage pipeline, geometric refinement & OpenCV desktop HUD
+    ├── evaluate.py                    # Reproducible test-split benchmark & confusion matrix script
+    ├── baseline.py                    # Milestone 2 classical YCrCb + Hu Moments + HOG + SVM pipeline
+    ├── predict.py                     # Milestone 2 classical single-image inference prototype
+    ├── generate_failures.py           # Automated mismatch hunter and skeleton failure annotator
+    └── spike.py                       # Milestone 1 feasibility spike and image processing script
 ```
 
 ---
 
-## 5. Installation & Setup
+## 8. Team and Contributions
 
-### Step 1: Clone the Repository & Set Up Virtual Environment
+**Course:** CSST 106 — Computer Vision Final Project
 
-```bash
-# Clone the project repository
-git clone https://github.com/Prince-Genel/signlang.git
-cd signlang
-
-# Create and activate a Python 3.12 virtual environment
-python -m venv venv
-
-# Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-# Windows (Command Prompt):
-.\venv\Scripts\activate.bat
-# macOS / Linux:
-source venv/bin/activate
-```
-
-### Step 2: Install Required Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-> **Requirements:** Python $\ge 3.10$, `mediapipe>=0.10.14`, `opencv-python>=4.9.0`, `scikit-learn>=1.6.0`, `matplotlib>=3.8.0`, `joblib>=1.3.0`, `pillow>=10.0.0`.
-
-### Step 3: Download Pre-Trained Model Weights
-
-> **Important:** Model weights are excluded from Git tracking due to file size limits and must be placed manually inside the `models/` folder.
-
-1. Download the trained Milestone 3 weights (`mediapipe_mlp_model.pkl` and `scaler_mp.pkl`) from Google Drive:  
-   🔗 **[Download Model Weights (Google Drive)](https://drive.google.com/drive/folders/1y-HSH_zvyWyW8_Z57QIqf8QoLx51tEPz?usp=sharing)**
-2. Place both `.pkl` files inside the `models/` directory:
-   ```text
-   models/
-   ├── mediapipe_mlp_model.pkl
-   └── scaler_mp.pkl
-   ```
-3. *(Optional)* The MediaPipe asset `models/hand_landmarker.task` will automatically download from Google Cloud Storage on first run if not present.
-
----
-
-## 6. Usage & Milestone 4 Deliverables
-
-### A. Run Interactive Web Application (Milestone 4 GUI)
-Launch the unified Gradio web application with image upload, live webcam streaming, confidence slider, skeleton toggle, and cumulative detection tally:
-
-```bash
-python src/app.py
-```
-- Open **`http://127.0.0.1:7860`** in your browser.
-- **Image Upload Tab:** Test single images or click sample images in the quick gallery.
-- **Live Webcam Tab:** Stream live video directly in the browser at 30 FPS.
-- **Controls:** Dynamic confidence threshold slider and keypoints toggle.
-
-### B. Reproduce Official Benchmark Results (Teacher Verification Command)
-Execute the exact command required by the Milestone 4 Checkpoint Guide:
-
-```bash
-python src/evaluate.py --split test --weights models/best.pt
-```
-- Evaluates the frozen 240-image unseen test set.
-- Prints the scikit-learn `classification_report` formatted with `digits=3`.
-- Reproduces **86.25% Accuracy** and **0.897 Macro-F1** at **~18.9 ms (52.7 FPS)**.
-- Outputs saved automatically to `outputs/eval/metrics.json` and `outputs/eval/confusion_matrix.png`.
-
-### C. Run Native Desktop Webcam Application (OpenCV HUD)
-Launch the direct Windows Media Foundation 30 FPS desktop window:
-
-```bash
-python src/run.py --webcam 0
-```
-- **Controls:** Press `q` or `ESC` to quit.
-- Displays real-time prediction, confidence score, FPS counter, and bottom cumulative counts bar.
-
-### D. Milestone 4 Documentation & Artifacts
-- **Test Cases (10 Matrix):** [`docs/test_cases.md`](docs/test_cases.md) (covers `TC01`–`TC10` including 3 hard edge cases).
-- **Technical Report:** [`docs/ms4_report.md`](docs/ms4_report.md) (methodology, experiments, failure analysis, operating conditions).
-- **Presentation Slides:** [`docs/slides.md`](docs/slides.md) (9 structured slides for defense).
-- **Path to 100% Roadmap:** [`docs/remaining.md`](docs/remaining.md) (Milestone 5 tasks, owners, and dates).
-
-
+| Team Member (Git Author) | Modules Owned | Concrete Technical Contributions | Git Commits |
+| :--- | :--- | :--- | :--- |
+| **Prince Genel Umali** (`Prince Genel Umali` / `Prinz`) | `src/baseline.py`, `src/predict.py`, `src/generate_failures.py`, `notebooks/CV_project_sign.ipynb`, `docs/ms3_report.pdf`, `requirements.txt` | Implemented Milestone 2 classical baseline (YCrCb skin segmentation, Hu moments, HOG, SVM); trained Milestone 3 MediaPipe + MLP classifier weights; created automated failure gallery generator (`outputs/failures/`); authored MS3 report PDF and initial repository setup. | `e604dde`, `1ccc86c`, `977d4a7`, `f31ee35`, `37a0a14`, `aa99dd1`, `fc7768e` |
+| **Kean Gabriel Salvahan** (`Kean`) | `src/app.py`, `src/run.py`, `src/evaluate.py`, `src/spike.py`, `models/best.pt`, `docs/Final_report.pdf`, `docs/test_cases.md`, `README.md` | Implemented Milestone 1 feasibility spike and contact sheet; engineered scale-invariant geometric landmark refinement (`OK`/`PALM`/`STOP`/`CALL`) and `num_hands=2` active-hand selection; built FastAPI + Gradio web app with native MJPEG streaming and auto-port fallback; standardized `src/evaluate.py` and Milestone 4/5 reports. | `8ba444f`, `1770621`, `0ef8627`, `9fe47c6`, `a733b70`, `8daeb04`, `4918227`, `59745c9` |
+| **Justin Angelo Luzande** (`Justin Angelo Luzande`) | `data/*.jpg`, `data/test/`, `src/run.py` (live HUD testing), `docs/datacard.md` | Collected and curated local multi-class gesture validation/test image samples across all 8 target gestures plus out-of-vocabulary negative samples (`fist`, `rock`); verified stratified dataset splits and conducted live webcam HUD verification. | `dc587a2`, `e990edc`, `4229391`, `8b7258c` |
