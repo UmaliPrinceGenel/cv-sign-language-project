@@ -170,6 +170,9 @@ def generate_mjpeg_stream():
     """
     global camera_active, latest_telemetry, total_frames_processed, gesture_counts
 
+    if not camera_active:
+        return
+
     print("[*] Starting backend MJPEG webcam stream via ThreadedCamera...")
     cap = ThreadedCamera(0)
     if not cap.isOpened():
@@ -259,8 +262,51 @@ def read_latest_telemetry():
 
 
 # -------------------------------------------------------------------------
-# Launch Native Desktop Camera Window
+# Launch Native Desktop Camera Window & Web Stream Controls
 # -------------------------------------------------------------------------
+def _active_stream_html() -> str:
+    """Returns HTML snippet containing the live MJPEG stream image with cache-busting query."""
+    ts = int(time.time() * 1000)
+    return (
+        '<div class="stream-box">'
+        f'<img id="live_mjpeg" src="/video_feed?t={ts}" '
+        'style="max-width: 640px; width: 100%; height: auto; border-radius: 4px;" '
+        'alt="Live Webcam Feed" />'
+        '</div>'
+    )
+
+
+def _stopped_stream_html() -> str:
+    """Returns HTML placeholder shown when the webcam stream is stopped."""
+    return (
+        '<div class="stream-box" style="min-height: 360px; color: #cccccc; font-size: 1rem;">'
+        '<span>Webcam stopped. Click "Start / Reconnect Stream" to resume.</span>'
+        '</div>'
+    )
+
+
+def stop_web_stream():
+    """Stops the browser MJPEG camera stream and releases hardware camera access."""
+    global camera_active, latest_telemetry
+    camera_active = False
+    latest_telemetry["prediction"] = "Webcam Stopped"
+    latest_telemetry["confidence"] = "--"
+    latest_telemetry["latency"] = "--"
+    latest_telemetry["fps"] = "--"
+    return _stopped_stream_html(), "Webcam stream stopped and camera released."
+
+
+def resume_web_stream():
+    """Resumes the browser MJPEG camera stream."""
+    global camera_active, latest_telemetry
+    camera_active = True
+    latest_telemetry["prediction"] = "Connecting..."
+    latest_telemetry["confidence"] = "--"
+    latest_telemetry["latency"] = "--"
+    latest_telemetry["fps"] = "--"
+    return _active_stream_html(), "Browser live stream active."
+
+
 def launch_native_camera():
     """Launches the dedicated OpenCV MSMF 30 FPS camera window."""
     global desktop_process, camera_active
@@ -276,14 +322,7 @@ def launch_native_camera():
 
     cmd = f'start cmd /c python "{PROJECT_ROOT}\\src\\run.py" --webcam 0'
     desktop_process = subprocess.Popen(cmd, shell=True)
-    return "✅ **Native OpenCV Desktop Window Launched!** (Running locked 30 FPS. Look at your taskbar / screen)."
-
-
-def resume_web_stream():
-    """Resumes the browser MJPEG camera stream."""
-    global camera_active
-    camera_active = True
-    return None
+    return _stopped_stream_html(), "**Native OpenCV Desktop Window Launched.** Running at locked 30 FPS (check your taskbar or screen)."
 
 
 # -------------------------------------------------------------------------
@@ -400,13 +439,13 @@ custom_css = """
 }
 """
 
-with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
+with gr.Blocks(title="Sign Language Gesture Recognition") as demo:
     gr.HTML(
         """
         <div class="hud-title">
-            <h1 style="margin: 0; font-size: 1.8rem;">🤟 Sign Language Gesture Recognition System</h1>
+            <h1 style="margin: 0; font-size: 1.8rem;">Sign Language Gesture Recognition System</h1>
             <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 0.95rem;">
-                CSST 106 Computer Vision • Milestone 4 Interactive Application • CPU-Optimized Pipeline
+                CSST 106 Computer Vision | Interactive Application | CPU-Optimized Pipeline
             </p>
         </div>
         """
@@ -415,7 +454,7 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
     with gr.Row():
         # Left Column: Global Controls & Cumulative Stats
         with gr.Column(scale=1):
-            gr.Markdown("### ⚙️ Interactive Controls")
+            gr.Markdown("### Interactive Controls")
             conf_slider = gr.Slider(
                 minimum=0.0,
                 maximum=1.0,
@@ -434,15 +473,15 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
             conf_slider.change(fn=update_controls, inputs=[conf_slider, toggle_skeleton], outputs=[])
             toggle_skeleton.change(fn=update_controls, inputs=[conf_slider, toggle_skeleton], outputs=[])
 
-            gr.Markdown("### 📊 Cumulative Gesture Tally")
+            gr.Markdown("### Cumulative Gesture Tally")
             tally_table = gr.DataFrame(
                 value=get_tally_df(),
                 label="Cumulative Detection Counts",
                 interactive=False
             )
             with gr.Row():
-                reset_btn = gr.Button("🔄 Reset Counts", variant="secondary")
-                sync_btn = gr.Button("📊 Sync Latest", variant="secondary")
+                reset_btn = gr.Button("Reset Counts", variant="secondary")
+                sync_btn = gr.Button("Sync Latest", variant="secondary")
 
             reset_status = gr.Markdown("")
             reset_btn.click(fn=reset_tally, inputs=[], outputs=[tally_table, reset_status])
@@ -452,11 +491,11 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
         with gr.Column(scale=2):
             with gr.Tabs():
                 # Tab 1: Image File Upload
-                with gr.Tab("🖼️ Image File Upload"):
+                with gr.Tab("Image File Upload"):
                     with gr.Row():
                         with gr.Column():
                             img_input = gr.Image(type="numpy", label="Upload Hand Gesture Image")
-                            run_img_btn = gr.Button("🔍 Run Prediction", variant="primary")
+                            run_img_btn = gr.Button("Run Prediction", variant="primary")
                         with gr.Column():
                             img_output = gr.Image(type="numpy", label="Annotated Result (Skeleton Only)")
 
@@ -474,7 +513,7 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
                     )
 
                     if sample_images:
-                        gr.Markdown("#### 📂 Quick Test Gallery (Click any sample image below to load and test)")
+                        gr.Markdown("#### Quick Test Gallery (Click any sample image below to load and test)")
                         gr.Examples(
                             examples=sample_images,
                             inputs=img_input,
@@ -484,18 +523,12 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
                         )
 
                 # Tab 2: Live Webcam Stream (MJPEG Stream - Zero Freeze)
-                with gr.Tab("📹 Live Webcam Stream"):
-                    gr.Markdown("### 🎥 Native 30 FPS Video Feed (Zero WebSocket Overhead)")
+                with gr.Tab("Live Webcam Stream"):
+                    gr.Markdown("### Native 30 FPS Video Feed (Zero WebSocket Overhead)")
                     gr.Markdown("Streams directly from your webcam via Windows Media Foundation without browser lag or freeze:")
 
                     # Native MJPEG Stream Component (Standard HTML <img>)
-                    gr.HTML(
-                        """
-                        <div class="stream-box">
-                            <img id="live_mjpeg" src="/video_feed" style="max-width: 640px; width: 100%; height: auto; border-radius: 4px;" alt="Live Webcam Feed" />
-                        </div>
-                        """
-                    )
+                    stream_view = gr.HTML(value=_active_stream_html())
 
                     with gr.Row():
                         cam_pred = gr.Textbox(label="Active Gesture", value="--")
@@ -511,25 +544,29 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
                     )
 
                     with gr.Row():
-                        refresh_stream_btn = gr.Button("🔄 Reconnect Stream", variant="secondary")
-                        refresh_stream_btn.click(fn=resume_web_stream, inputs=[], outputs=[])
+                        refresh_stream_btn = gr.Button("Start / Reconnect Stream", variant="secondary")
+                        stop_stream_btn = gr.Button("Stop Webcam", variant="stop")
+
+                    stream_status = gr.Markdown("")
+                    refresh_stream_btn.click(fn=resume_web_stream, inputs=[], outputs=[stream_view, stream_status])
+                    stop_stream_btn.click(fn=stop_web_stream, inputs=[], outputs=[stream_view, stream_status])
 
                     gr.Markdown("---")
-                    gr.Markdown("#### 🖥️ Dedicated Hardware Window Alternative")
+                    gr.Markdown("#### Dedicated Hardware Window Alternative")
                     gr.Markdown("Prefer the standalone OpenCV desktop window? Click below:")
-                    launch_desktop_btn = gr.Button("🚀 Launch Native Desktop Camera Window (30 FPS OpenCV)", variant="primary")
+                    launch_desktop_btn = gr.Button("Launch Native Desktop Camera Window (30 FPS OpenCV)", variant="primary")
                     desktop_status = gr.Markdown("")
-                    launch_desktop_btn.click(fn=launch_native_camera, inputs=[], outputs=[desktop_status])
+                    launch_desktop_btn.click(fn=launch_native_camera, inputs=[], outputs=[stream_view, desktop_status])
 
                 # Tab 3: Video File Input
-                with gr.Tab("🎞️ Pre-recorded Video File"):
+                with gr.Tab("Pre-recorded Video File"):
                     gr.Markdown("Upload a pre-recorded `.mp4` or `.avi` video clip to run end-to-end batch inference.")
                     with gr.Row():
                         vid_input = gr.Video(label="Upload Video File")
                         vid_output = gr.Video(label="Annotated Output Video")
 
                     vid_status = gr.Textbox(label="Batch Processing Summary", value="Ready.")
-                    run_vid_btn = gr.Button("🚀 Process Video", variant="primary")
+                    run_vid_btn = gr.Button("Process Video", variant="primary")
 
                     run_vid_btn.click(
                         fn=process_video_file,
@@ -540,7 +577,7 @@ with gr.Blocks(title="Sign Language Gesture Recognition - Milestone 4") as demo:
     gr.Markdown(
         """
         ---
-        **Pipeline Architecture:** MediaPipe Tasks API (21 3D Landmarks) ➔ StandardScaler ➔ 2-Layer MLP (128x64 ReLU) ➔ Geometric Landmark Refinement ➔ Majority-Vote Smoothing Window.  
+        **Pipeline Architecture:** MediaPipe Tasks API (21 3D Landmarks) -> StandardScaler -> 2-Layer MLP (128x64 ReLU) -> Geometric Landmark Refinement -> Majority-Vote Smoothing Window.  
         *Model kept persistently resident in RAM without reload.*
         """
     )
